@@ -2,18 +2,59 @@ import requests
 
 
 def encontrar_cep():
-    uf = input('Insira a UF (ex: RJ): ').upper()
+    uf = input('\nInsira a UF (ex: RJ): ').upper()
     cidade = input('Insira o nome da cidade: ')
-    logradouro = input('Insira o nome do logradouro (ex: Presidente Vargas): ')
+    logradouro = input('Insira o nome do logradouro (ex: Avenida Presidente Vargas): ')
 
     r = requests.get(url=f'https://viacep.com.br/ws/{uf}/{cidade}/{logradouro}/json')
+
+    if r.status_code == 400:
+        print('\nOs nomes da cidade e do logradouro devem conter ao menos 3 caracteres')
+        return
+
+    resposta = r.json()
+    numero_resultados = len(resposta)
+
+    print(f'\nSua busca retornou {numero_resultados} resultados!\n')
+
+    pagina = 1
+    for i in range(numero_resultados):
+        for j in range(10 * (pagina - 1), 10 * pagina):
+            if j == numero_resultados:
+                break
+
+            bairro = resposta[j]['bairro']
+            logradouro_resposta = resposta[j]['logradouro']
+            complemento = resposta[j]['complemento'] or 's/ complemento'
+            cep = resposta[j]['cep']
+
+            print(f'Bairro {bairro}, {logradouro_resposta}, {complemento}: CEP {cep}')
+
+        if j == numero_resultados:
+            print('\nTodos os resultados exibidos')
+            break
+
+        print('\nVocê encontrou o que procurava? \n (1) Sim (2) Não')
+        cep_ok = int(input())
+
+        while cep_ok not in [1, 2]:
+            print('Opção inválida!')
+            print('Você encontrou o que procurava? \n (1) Sim (2) Não')
+            cep_ok = int(input())
+
+        if cep_ok == 1:
+            break
+        else:
+            pagina += 1
+
+
 
 
 def main():
 
     print('Qual das opções se adequa melhor a você?')
     print('(1) Tenho um CEP e quero descobrir o endereço')
-    print('(2) Tenho um endereço e preciso descobrir seu CEP\n\n')
+    print('(2) Tenho um endereço e preciso descobrir seu CEP\n')
 
     opcao = int(input())
 
@@ -26,7 +67,7 @@ def main():
 
 
 def encontrar_endereco():
-    cep = input('Insira o CEP: ').strip('-')
+    cep = input('\nInsira o CEP: ').strip('-')
 
     resposta = faz_request(cep)
 
